@@ -1,4 +1,4 @@
-name: Pull Request
+name: Trunk Check
 on:
   push:
     branches: [ main ]
@@ -27,9 +27,3 @@ jobs:
 
       - name: Trunk Check
         uses: trunk-io/trunk-action@v1
-  python_package:
-    name: Python Package Runner
-    runs-on: ubuntu-latest
-    steps:
-      - name: Python Package
-        uses: ./
