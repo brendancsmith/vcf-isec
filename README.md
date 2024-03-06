@@ -22,20 +22,20 @@ This script takes as input two VCFs and performs a comparison of the variants fo
 
 Carefully read the following questions. In your next interview, be prepared to discuss each question and scenario. During the discussion, be as specific as possible regarding how the mentioned technology would be used. Our goal is to find out how quickly you grasp novel technologies, with respect to both their benefits and drawbacks.
 
-#### Scenario A:
+### Scenario A:
 
 In the current system large JSON Lines files (100,000 JSON dictionaries per file) are uploaded to S3. Each file is then read line by line and the JSON dictionaries sent to a MongoDB collection using Apache Airflow. The client would like to remove Airflow from this process. The entire contents of the JSON Lines file must be uploaded to MongoDB. Files that are in the process of being uploaded and those that have errored must be tracked.
 
-##### Questions:
+#### Questions:
 
 1. Take 5-10 minutes to present an architecture that would eliminate the need to use Apache Airflow. Feel free to use any combination of AWS services you wish to solve the problem. Be prepared to justify your technology and architectural decisions.
 2. How would you retry the process if MongoDB went offline in the middle of an upload?
 
-#### Scenario B
+### Scenario B
 
 Linux nodes continuously watch a RabbitMQ queue to see if any jobs have been submitted. When a job appears in a queue, one node will pick up the job, thereby preventing a different node from picking up the same job. RabbitMQ’s ack late feature is used to ensure jobs are retried when a node abruptly fails. Only one node is supposed to execute a job at one time, however, under some conditions, it is possible for two nodes to pick up the same job which will cause issues. The only shared systems between the nodes are the RabbitMQ queue and a MongoDB database.
 
-##### Questions:
+#### Questions:
 
 1. Come up with a strategy on how to keep two jobs from running at the same time. The strategy can only use the given resources.
 2. If a new shared resource or technology could be added to the system, what would you add to ensure that two jobs do not run at the same time?

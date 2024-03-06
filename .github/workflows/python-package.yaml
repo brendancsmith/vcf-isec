@@ -1,19 +1,17 @@
 name: Python Package
 on:
   push:
-    branches: ["main"]
+    branches: [ main ]
   pull_request:
-    branches: ["main"]
+    branches: [ main ]
   workflow_dispatch:
-    inputs:
-      branch:
-        description: "Branch to run the workflow on"
-        required: true
-        default: "main"
+    # no inputs
 
 concurrency:
-  group: ${{ github.head_ref || github.run_id }}
+  group: python-package-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
+
+permissions: read-all
 
 jobs:
   build:
@@ -27,9 +25,10 @@ jobs:
       # check-out repo and set-up python
       #----------------------------------------------
       - name: Check out repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v3
+        id: setup-python
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       #----------------------------------------------
@@ -49,7 +48,7 @@ jobs:
       #----------------------------------------------
       - name: Load cached venv
         id: cached-poetry-dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: .venv
           key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}

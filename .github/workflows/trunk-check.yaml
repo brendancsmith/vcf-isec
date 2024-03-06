@@ -1,18 +1,14 @@
-name: Run Linter
+name: Pull Request
 on:
   push:
-    branches: ["main"]
+    branches: [ main ]
   pull_request:
-    branches: ["main"]
+    branches: [ main ]
   workflow_dispatch:
-    inputs:
-      branch:
-        description: "Branch"
-        required: true
-        default: "main"
+    # no inputs
 
 concurrency:
-  group: ${{ github.head_ref || github.run_id }}
+  group: trunk-check-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 permissions: read-all
@@ -31,3 +27,9 @@ jobs:
 
       - name: Trunk Check
         uses: trunk-io/trunk-action@v1
+  python_package:
+    name: Python Package Runner
+    runs-on: ubuntu-latest
+    steps:
+      - name: Python Package
+        uses: ./
