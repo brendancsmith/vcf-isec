@@ -20,8 +20,22 @@ from vcf_isec.isec import VCFIntersection
         writable=True,
         path_type=Path,
     ),
+    default=None,
+    help="The directory to write isec outputs. Will create a tempory directory if not set.",
+)
+@click.option(
+    "-o",
+    "--output",
+    type=click.Path(
+        exists=False,
+        file_okay=False,
+        dir_okay=True,
+        allow_dash=False,  # TODO: allow writing to stdout
+        writable=True,
+        path_type=Path,
+    ),
     default="output",
-    help="Output directory",
+    help="The directory to write the output files.",
 )
 @click.argument(
     "file1",
@@ -45,14 +59,14 @@ from vcf_isec.isec import VCFIntersection
         path_type=Path,
     ),
 )
-def main(prefix, file1, file2):
+def main(prefix, output, file1, file2):
     try:
         with tempfile.TemporaryDirectory() as tmp_dir:
             vcf1 = parser.VCFPreparer(file1, tmp_dir).prepare()
             vcf2 = parser.VCFPreparer(file2, tmp_dir).prepare()
 
-            isec = VCFIntersection(vcf1, vcf2, Path(tmp_dir) / "isec")
-            shared, unique1, unique2 = isec.compare_vcf()
+            isec = VCFIntersection(vcf1, vcf2, output, prefix or Path(tmp_dir) / "isec")
+            shared, unique1, unique2 = isec.intersect()
 
         print(f"Unique to {file1.name}: {len(unique1)}")
         print(f"Unique to {file1.name}: {len(unique2)}")

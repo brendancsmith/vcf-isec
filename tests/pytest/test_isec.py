@@ -75,7 +75,7 @@ class TestVCFIntersection:
         Test the VCFIntersection class with simple data.
         """
 
-        monkeypatch.setattr("click.confirm", lambda *args, **kwargs: False)
+        monkeypatch.setattr("click.confirm", lambda *args, **kwargs: None)
 
         file1, file2 = SIMPLE_CMP_VCFS
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -83,8 +83,8 @@ class TestVCFIntersection:
             vcf2 = VCFPreparer(file2, tmp_dir).prepare()
 
             prefix = Path(tmp_dir) / "isec"
-            isec = VCFIntersection(vcf1, vcf2, prefix)
-            intersected, unique1, unique2 = isec.compare_vcf()
+            isec = VCFIntersection(vcf1, vcf2, "output", prefix)
+            intersected, unique1, unique2 = isec.intersect()
             assert len(intersected) == 5, "Expected 5 intersected variants."
             assert len(unique1) == 1, "Expected no unique variants in file1."
             assert len(unique2) == 1, "Expected no unique variants in file2."
@@ -104,7 +104,7 @@ class TestVCFIntersection:
 
             prefix = Path(tmp_dir) / "isec"
             isec = VCFIntersection(vcf1, vcf2, prefix)
-            intersected, unique1, unique2 = isec.compare_vcf()
+            intersected, unique1, unique2 = isec.intersect()
             assert (
                 len(intersected) == vcf_fixture.intersected_count
             ), f"Expected {vcf_fixture.intersected_count} intersected variants, found {len(intersected)}."
