@@ -12,8 +12,8 @@
       "args": [
         "tests/resources/cmp-test-a.vcf",
         "tests/resources/cmp-test-b.vcf",
-        "-p",
-        "tmp"
+        "-o",
+        "output"
       ]
     }
   ]

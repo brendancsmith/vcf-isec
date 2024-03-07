@@ -8,7 +8,11 @@ from pysam import VariantRecord, bcftools
 
 
 class VCFPreparer:
-    """Builder pattern for preparing VCF files for intersection operation."""
+    """
+    Builder pattern for preparing VCF files for intersection operation.
+
+    Instantiate the class then call prepare() to compress and index the VCF file.
+    """
 
     def __init__(self, path: Path | str, prefix: Path | str = "output"):
         self.provided_path = Path(path)
@@ -20,6 +24,19 @@ class VCFPreparer:
         self.tbi_path = None
 
     def prepare(self) -> Path:
+        """
+        Prepares the VCF file for processing.
+
+        If the provided file has a '.vcf' extension, it compresses the file.
+        If the provided file has a '.gz' extension, it sets the gz_path attribute.
+        Then, it indexes the file.
+
+        Returns:
+            The path to the gzipped VCF file.
+
+        Raises:
+            RuntimeError: If the BGZipped VCF file is not set.
+        """
         if self.provided_path.suffix == ".vcf":
             self.compress()
         elif self.provided_path.suffix == ".gz":
@@ -32,14 +49,9 @@ class VCFPreparer:
 
         return self.gz_path
 
-    def compress(self):
+    def compress(self) -> None:
         """
         Compresses the provided VCF file to a BGZipped VCF file.
-
-        -
-        -
-        - If the user chooses to overwrite the existing file or if no
-            existing file is found, a new BGZipped VCF file is created.
 
         Returns:
             None
@@ -71,10 +83,18 @@ class VCFPreparer:
         self.gz_is_new = True
 
     def index(self):
-        # TODO: I think bcftools.isec expects index to be in the same directory,
-        #      so we may need to copy the VCF to the prefix directory and write
-        #      the index there too
+        """
+        Indexes a compressed VCF file.
 
+        This method indexes a compressed VCF file using the tabix indexing tool from the pysam library.
+        It checks if an index file already exists and prompts the user for actions accordingly.
+
+        Raises:
+            RuntimeError: If `self.gz_path` is not set.
+
+        Returns:
+            None
+        """
         # Ensure that we have a compressed VCF file to index
         if self.gz_path is None:
             import inspect
@@ -132,6 +152,15 @@ class VCFPreparer:
 
 
 def parse_header(vcf_path: Path | str) -> str:
+    """
+    Parses the header of a VCF file and returns it as a string.
+
+    Args:
+        vcf_path (Path | str): The path to the VCF file.
+
+    Returns:
+        str: The header of the VCF file as a string.
+    """
     with pysam.VariantFile(str(vcf_path)) as vcf:
         return str(vcf.header)
 
@@ -141,10 +170,10 @@ def parse_variants(vcf_path: Path | str) -> Iterable[VariantRecord]:
     Extracts variants from a VCF file using pysam.VariantFile.
 
     Args:
-        vcf_path (str): Path to the VCF file.
+        vcf_path (Path | str): Path to the VCF file.
 
     Returns:
-        Iterable[str]: Iterable of variants.
+        Iterable[VariantRecord]: Iterable of variants.
     """
 
     with pysam.VariantFile(str(vcf_path)) as vcf:
