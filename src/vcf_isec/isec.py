@@ -3,17 +3,18 @@ import tempfile
 from pathlib import Path
 from typing import List, NamedTuple
 
+import pysam
 from pysam import bcftools
 from pysam.utils import SamtoolsError
 
 from vcf_isec.errors import FileFormatError, IntersectError
-from vcf_isec.parser import Variant, parse_variants
+from vcf_isec.parser import parse_variants
 
 
 class ISecOutput(NamedTuple):
-    intersection: List[Variant]
-    complement1: List[Variant]
-    complement2: List[Variant]
+    intersection: List[pysam.VariantRecord]
+    complement1: List[pysam.VariantRecord]
+    complement2: List[pysam.VariantRecord]
 
 
 class VCFIntersection:

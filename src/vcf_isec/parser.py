@@ -1,33 +1,10 @@
 import types
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Iterable, Optional, Tuple, cast
+from typing import Iterable, cast
 
 import click
 import pysam
-from pysam import bcftools
-
-
-@dataclass
-class Variant:
-    rid: int
-    chrom: str
-    contig: str
-    pos: int
-    start: int
-    stop: int
-    rlen: int
-    qual: Optional[int]
-    id: Optional[str]
-    ref: Optional[str]
-    alleles: Optional[Tuple[str, ...]]
-    alts: Optional[Tuple[str, ...]]
-
-
-@dataclass
-class IndexOperation:
-    out_path: Path | None
-    operation: Callable
+from pysam import VariantRecord, bcftools
 
 
 class VCFPreparer:
@@ -78,10 +55,10 @@ class VCFPreparer:
 
             if click.confirm(f"Overwrite {gz_path}?"):
                 self.gz_path = gz_path
-        else:
-            # Otherwise, the user is prompted to create a new BGZipped VCF file.
-            if click.confirm(f"Create BGZipped VCF at {gz_path}?"):
-                self.gz_path = gz_path
+
+        # Otherwise, the user is prompted to create a new BGZipped VCF file.
+        elif click.confirm(f"Create BGZipped VCF at {gz_path}?"):
+            self.gz_path = gz_path
 
         # If the user declines, we use the prefix directory
         if self.gz_path is None:
@@ -108,7 +85,7 @@ class VCFPreparer:
             )
 
         # Construct the path for the tabix index file
-        tbi_path = Path(str(self.gz_path) + ".tbi")
+        tbi_path = Path(f"{self.gz_path}.tbi")
 
         # If the prefix directory is the expected parent of the index, set tbi_path
         if self.prefix and self.prefix == tbi_path.parent:
@@ -127,23 +104,22 @@ class VCFPreparer:
 
             # If user does not want to create tbi file, set the tbi_path to the prefix
             else:
-                self.tbi_path = Path(self.prefix.name) / (self.gz_path.name + ".tbi")
+                self.tbi_path = Path(self.prefix.name) / f"{self.gz_path.name}.tbi"
 
-        else:
-            # If compressed VCF is new, we try to overwrite old index if it exists
-            if tbi_path.exists():
-                if click.confirm(f"Tabix index found at {tbi_path}. Overwrite it?"):
-                    self.tbi_path = tbi_path
-                    return
-
-                self.tbi_path = Path(self.prefix.name) / (self.gz_path.name + ".tbi")
-
-            # If the tbi file does not exist, ask user if they want to create it
-            elif click.confirm(f"Create tabix index at {tbi_path}?"):
+        # If compressed VCF is new, we try to overwrite old index if it exists
+        elif tbi_path.exists():
+            if click.confirm(f"Tabix index found at {tbi_path}. Overwrite it?"):
                 self.tbi_path = tbi_path
-            else:
-                # Otherwise, set the tbi_path to the prefix directory
-                self.tbi_path = Path(self.prefix.name) / (self.gz_path.name + ".tbi")
+                return
+
+            self.tbi_path = Path(self.prefix.name) / f"{self.gz_path.name}.tbi"
+
+        # If the tbi file does not exist, ask user if they want to create it
+        elif click.confirm(f"Create tabix index at {tbi_path}?"):
+            self.tbi_path = tbi_path
+        else:
+            # Otherwise, set the tbi_path to the prefix directory
+            self.tbi_path = Path(self.prefix.name) / f"{self.gz_path.name}.tbi"
 
         # Create index
         pysam.tabix_index(
@@ -155,59 +131,12 @@ class VCFPreparer:
         )
 
 
-# def compress_and_index(vcf_path: Path | str) -> IndexOperation | None:
-#     """
-#     Indexes a VCF file using pysam.tabix_indexcompress.
-
-#     Args:
-#         vcf_path (str): Path to the VCF file.
-#     """
-
-#     pysam.HTSFile()
-
-#     vcf_path = Path(vcf_path)
-
-#     if vcf_path.suffix == ".vcf":
-#         sorted_path = vcf_path.with_name(vcf_path.stem + "_sorted.vcf")
-#         out_path = vcf_path.with_suffix(".vcf.gz")
-
-#         def op():
-#             data = bcftools.sort("-o", str(sorted_path), str(vcf_path))
-#             with open(sorted_path, "w") as f:
-#                 f.write(data)  # type: ignore
-
-#             data = bcftools.view("-Oz", "-o", str(out_path), str(sorted_path))
-#             with open(out_path, "wb") as f:
-#                 f.write(data)  # type: ignore
-
-#             # pysam.tabix_compress(str(sorted_path), str(out_path), force=True)
-
-#             if Path(str(out_path) + ".tbi").exists():
-#                 return
-
-#             pysam.tabix_index(str(out_path), keep_original=True, preset="vcf")
-
-#         return IndexOperation(
-#             out_path,
-#             op,
-#         )
-
-#     elif vcf_path.suffix == ".vcf.gz":
-#         if vcf_path.with_suffix(".tbi").exists():
-#             return None
-#         else:
-#             return IndexOperation(
-#                 None,
-#                 lambda: pysam.tabix_index(
-#                     str(vcf_path), keep_original=True, preset="vcf"
-#                 ),
-#             )
-
-#     else:
-#         raise FileFormatError(f"Unsupported file type: {vcf_path}")
+def parse_header(vcf_path: Path | str) -> str:
+    with pysam.VariantFile(str(vcf_path)) as vcf:
+        return str(vcf.header)
 
 
-def parse_variants(vcf_path: Path | str) -> Iterable[Variant]:
+def parse_variants(vcf_path: Path | str) -> Iterable[VariantRecord]:
     """
     Extracts variants from a VCF file using pysam.VariantFile.
 
@@ -219,18 +148,4 @@ def parse_variants(vcf_path: Path | str) -> Iterable[Variant]:
     """
 
     with pysam.VariantFile(str(vcf_path)) as vcf:
-        for record in vcf.fetch():
-            yield Variant(
-                record.rid,
-                record.chrom,
-                record.contig,
-                record.pos,
-                record.start,
-                record.stop,
-                record.rlen,
-                record.qual,
-                record.id,
-                record.ref,
-                record.alleles,
-                record.alts,
-            )
+        yield from vcf.fetch()
