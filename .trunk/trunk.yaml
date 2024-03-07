@@ -20,6 +20,7 @@ runtimes:
 # This is the section where you manage your linters. (https://docs.trunk.io/check/configuration)
 lint:
   disabled:
+    - sourcery
     - isort
     - black
   definitions:
@@ -31,7 +32,6 @@ lint:
   enabled:
     - semgrep@1.64.0
     - gitleaks@8.18.2
-    - sourcery@1.15.0
     - bandit@1.7.7
     - actionlint@1.6.27
     - checkov@3.2.32
